@@ -1,14 +1,34 @@
 [
   {
     "name": "week",
-    "title": "This week",
-    "subtitle": "Research Ethics for Claude Code: what needs attention, rendered by npm run view",
+    "title": "The ethics office this week",
+    "subtitle": "What is waiting, what is late and what is coming up. Rendered by npm run view.",
     "sections": [
-      {
-        "title": "Needs attention",
-        "note": "TODO(author): point this at the industry's attention view (overdue, stuck, quiet).",
-        "sql": "select 'replace me' as item, 'TODO(author)' as why"
-      }
+      { "title": "The queue", "note": "Every application not yet decided, with the decision clock (days with the researcher do not count).", "sql": "select d.name as application, d.title, d.committee, d.pathway, d.status, d.clock_days as days_on_clock, d.reviews_out, d.meeting from application_detail d where d.status in ('submitted', 'in review', 'revisions') order by d.submitted_on" },
+      { "title": "Reviews late", "sql": "select a.name as application, m.name as reviewer, r.due_on, ethics_today() - r.due_on as days_late from reviews r join applications a on a.id = r.application_id join members m on m.id = r.member_id where r.returned_on is null and r.conflict is null and r.due_on < ethics_today() and a.status in ('submitted', 'in review') order by r.due_on" },
+      { "title": "Next meetings", "sql": "select m.name as meeting, m.meets_on, m.closes_on as agenda_closes, count(a.id)::int as items from meetings m left join applications a on a.meeting_id = m.id where m.meets_on >= ethics_today() and not m.held group by m.id order by m.meets_on" },
+      { "title": "Decision letters not sent", "sql": "select name as application, decision, decided_on from applications where decided_on is not null and letter_sent_on is null order by decided_on" }
+    ]
+  },
+  {
+    "name": "monitoring",
+    "title": "Monitoring approved research",
+    "subtitle": "Reports, expiring approvals, safety and animal numbers.",
+    "sections": [
+      { "title": "Progress reports due in 30 days or late", "sql": "select name as application, investigator, next_report_due, last_report_on from approvals where days_to_expiry >= 0 and days_to_report <= 30 order by next_report_due" },
+      { "title": "Approvals ending in 90 days or ended", "sql": "select name as application, investigator, expires_on, days_to_expiry from approvals where days_to_expiry <= 90 order by expires_on" },
+      { "title": "Open safety and conduct reports", "sql": "select e.name, a.name as application, e.kind, e.occurred_on, e.reported_on, e.summary from events e join applications a on a.id = e.application_id where e.closed_on is null order by e.occurred_on" },
+      { "title": "Animal numbers", "sql": "select name as application, species, animals_approved as approved, animals_used as used, animals_approved - animals_used as remaining from approvals where animals_approved is not null order by animals_approved - animals_used" }
+    ]
+  },
+  {
+    "name": "committees",
+    "title": "Committees",
+    "subtitle": "Membership by category, terms and turnaround.",
+    "sections": [
+      { "title": "Membership by category", "sql": "select committee, category, members, external, names from membership order by committee, category" },
+      { "title": "Terms ending in 90 days or ended", "sql": "select c.name as committee, m.name, m.category, m.term_ends_on from members m join committees c on c.id = m.committee_id where m.active and m.term_ends_on <= ethics_today() + 90 order by m.term_ends_on" },
+      { "title": "Turnaround in the last 12 months", "note": "Days from a valid submission to a decision, with the clock stopped while the researcher responds.", "sql": "select committee, pathway, count(*)::int as decided, round(avg(clock_days)) as average_days, max(clock_days) as slowest_days from application_detail where decided_on >= ethics_today() - 365 and clock_days is not null group by committee, pathway order by committee, pathway" }
     ]
   }
 ]

@@ -13,12 +13,15 @@ That layer used to be the whole product, because talking to a database was hard.
 
 ## What you give up
 
-- **A visual board.** Stages are a table you ask about, not cards you drag.
-- **A phone app.** It runs where Claude Code runs.
-- **A vendor help desk.** This is open source. Enterprise DNA supports the installed version for businesses that want someone to call.
+- **The researcher portal.** In Infonetica, researchers fill the application form online and see its status. Here they send the completed form and documents to the ethics office, which registers the application and tells them where it stands. Most offices already handle the questions about status by email.
+- **Online review for members.** Reviewers read the documents and send their comments; the office records them with one command. A member never logs in.
+- **A form builder.** The national HREA form and your own forms stay as documents. This system holds the record of the application, not the form itself.
+- **A vendor help desk.** This is open source. Enterprise DNA supports the installed version for institutions that want someone to call.
+
+Every one of these can be built on top of the same database when it is worth it: a submission form, a status page for researchers, a review page for members. That is what Enterprise DNA does when it customises it.
 
 ## Who this fits
 
-Small teams who already use Claude Code, or who would rather learn to ask than learn another interface. If your team needs a screen to look at all day, keep Infonetica. If you need the answers more than the screens, this is cheaper, faster and yours.
+Ethics offices that spend their week on the queue, the agenda, letters and reminders, and want answers about turnaround, reports and compliance without waiting for a vendor's report. If your researchers must have a portal from day one, keep Infonetica or ask Enterprise DNA to build one on this. If you need the answers more than the screens, this is cheaper, faster and yours.
 
 Installed and run for you: https://enterprisedna.co/omni/instead-of/infonetica

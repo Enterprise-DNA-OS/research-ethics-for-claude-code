@@ -1,11 +1,40 @@
 [
   {
-    "name": "example",
-    "title": "TODO(author): the first document this industry must produce",
-    "for_each": "select gen_random_uuid() as id, 'Example' as name",
+    "name": "approval-certificate",
+    "title": "Ethics approval",
+    "for_each": "select id, name from applications where status = 'approved' order by name",
     "file": "name",
     "sections": [
-      { "title": "Details", "sql": "select 'replace me' as item, $1::text as record_id" }
+      { "title": "Approval", "layout": "record", "sql": "select name as reference, title, committee, investigator, department, pathway, approved_on, expires_on, next_report_due as first_report_due from application_detail where id = $1" },
+      { "title": "Conditions", "layout": "record", "sql": "select coalesce(conditions, 'None') as conditions, conditions_due_on as conditions_due from applications where id = $1" },
+      { "title": "Animals approved", "sql": "select species, animals_approved as approved from applications where id = $1 and animals_approved is not null" },
+      { "title": "Amendments approved", "sql": "select name, summary, decided_on from amendments where application_id = $1 and outcome = 'approved' order by decided_on" }
+    ]
+  },
+  {
+    "name": "meeting-agenda",
+    "title": "Committee agenda",
+    "for_each": "select id, name from meetings where not held and meets_on >= ethics_today() order by meets_on",
+    "file": "name",
+    "sections": [
+      { "title": "Meeting", "layout": "record", "sql": "select m.name as meeting, c.name as committee, m.meets_on, m.closes_on as agenda_closed from meetings m join committees c on c.id = m.committee_id where m.id = $1" },
+      { "title": "New applications", "sql": "select name as reference, title, investigator, pathway, reviewers, reviews_out from application_detail where meeting_id = $1 order by name" },
+      { "title": "Amendments waiting", "sql": "select x.name, a.name as application, x.summary, x.submitted_on from amendments x join applications a on a.id = x.application_id where x.decided_on is null and a.committee_id = (select committee_id from meetings where id = $1) order by x.submitted_on" },
+      { "title": "Safety and conduct reports open", "sql": "select e.name, a.name as application, e.kind, e.occurred_on, e.summary from events e join applications a on a.id = e.application_id where e.closed_on is null and a.committee_id = (select committee_id from meetings where id = $1) order by e.occurred_on" }
+    ]
+  },
+  {
+    "name": "annual-committee-report",
+    "title": "Committee annual report",
+    "for_each": "select id, name from committees where active order by name",
+    "file": "name",
+    "sections": [
+      { "title": "Committee", "layout": "record", "sql": "select name as committee, kind, registration, quorum from committees where id = $1" },
+      { "title": "Membership", "sql": "select category, count(*)::int as members, count(*) filter (where external)::int as external from members where committee_id = $1 and active group by category order by category" },
+      { "title": "Meetings in the last 12 months", "sql": "select count(*)::int as meetings_held from meetings where committee_id = $1 and held and meets_on >= ethics_today() - 365" },
+      { "title": "Applications in the last 12 months", "sql": "select count(*) filter (where submitted_on >= ethics_today() - 365)::int as received, count(*) filter (where decision in ('approved', 'approved with conditions') and decided_on >= ethics_today() - 365)::int as approved, count(*) filter (where decision = 'declined' and decided_on >= ethics_today() - 365)::int as declined, count(*) filter (where status = 'withdrawn')::int as withdrawn from applications where committee_id = $1" },
+      { "title": "Monitoring", "sql": "select count(*) filter (where status = 'approved')::int as approvals_running, count(*) filter (where status = 'approved' and next_report_due < ethics_today())::int as reports_late from applications where committee_id = $1" },
+      { "title": "Safety and conduct reports received", "sql": "select e.kind, count(*)::int as received from events e join applications a on a.id = e.application_id where a.committee_id = $1 and e.reported_on >= ethics_today() - 365 group by e.kind order by e.kind" }
     ]
   }
 ]
